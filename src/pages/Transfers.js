@@ -1,45 +1,68 @@
-import { useState } from "react";
-import { Container, Form, Button, Card } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { Container, Form, Button, Card, Table, Badge, Alert, Row, Col } from "react-bootstrap";
 import API from "../api";
 
 const Transfers = () => {
     const [transfer, setTransfer] = useState({ assetId: "", sourceBaseId: "", destBaseId: "" });
     const [message, setMessage] = useState(null);
+    const [history, setHistory] = useState([]);
+
+    useEffect(() => { fetchHistory(); }, []);
+
+    const fetchHistory = async () => {
+        try {
+            const res = await API.get("/assets/transfers/history");
+            setHistory(res.data);
+        } catch (err) { console.error("Failed to load history"); }
+    };
 
     const handleTransfer = async (e) => {
         e.preventDefault();
         try {
             await API.post("/assets/transfer", transfer);
-            setMessage({ type: "success", text: "Transfer Successful!" });
+            setMessage({ type: "success", text: "Transfer Successful! Log updated." });
+            fetchHistory(); 
+            setTransfer({ assetId: "", sourceBaseId: "", destBaseId: "" });
         } catch (err) {
-            setMessage({ type: "danger", text: "Transfer Failed. Check IDs." });
+            setMessage({ type: "danger", text: "Transfer Failed. Check Asset ID and Source Base." });
         }
     };
 
     return (
         <Container className="mt-4">
-            <h2>Asset Transfers</h2>
-            {message && <Card className={`p-3 mb-3 bg-${message.type} text-white`}>{message.text}</Card>}
+            <h2 className="mb-4">Logistics & Transfers</h2>
+            {message && <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>{message.text}</Alert>}
 
-            <Card className="p-4">
+            <Card className="p-4 mb-5 shadow border-0 border-start border-warning border-5">
+                <Card.Title className="mb-3">Initiate Transfer</Card.Title>
                 <Form onSubmit={handleTransfer}>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Asset ID to Move</Form.Label>
-                        <Form.Control type="number" onChange={e => setTransfer({...transfer, assetId: e.target.value})} required />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Source Base ID</Form.Label>
-                        <Form.Control type="number" onChange={e => setTransfer({...transfer, sourceBaseId: e.target.value})} required />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Destination Base ID</Form.Label>
-                        <Form.Control type="number" onChange={e => setTransfer({...transfer, destBaseId: e.target.value})} required />
-                    </Form.Group>
-                    <Button variant="warning" type="submit">Initiate Transfer</Button>
+                    <Row className="g-3">
+                        <Col md={3}><Form.Control type="number" placeholder="Asset ID" value={transfer.assetId} onChange={e => setTransfer({...transfer, assetId: e.target.value})} required /></Col>
+                        <Col md={3}><Form.Control type="number" placeholder="Source Base ID" value={transfer.sourceBaseId} onChange={e => setTransfer({...transfer, sourceBaseId: e.target.value})} required /></Col>
+                        <Col md={3}><Form.Control type="number" placeholder="Dest Base ID" value={transfer.destBaseId} onChange={e => setTransfer({...transfer, destBaseId: e.target.value})} required /></Col>
+                        <Col md={3}><Button variant="warning" type="submit" className="w-100 fw-bold">Execute Move</Button></Col>
+                    </Row>
                 </Form>
             </Card>
+
+            <h4 className="text-muted">Movement Audit Log</h4>
+            <Table hover responsive className="shadow-sm">
+                <thead className="table-dark">
+                    <tr><th>ID</th><th>Asset</th><th>From</th><th>To</th><th>Time (UTC)</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {history.length === 0 ? <tr><td colSpan="6" className="text-center">No transfers recorded.</td></tr> : history.map(log => (
+                        <tr key={log.id}>
+                            <td>#{log.id}</td><td className="fw-bold">{log.assetName}</td>
+                            <td><Badge bg="secondary">{log.sourceBase}</Badge></td>
+                            <td><Badge bg="info">{log.destBase}</Badge></td>
+                            <td>{new Date(log.timestamp).toLocaleString()}</td>
+                            <td><Badge bg="success">COMPLETED</Badge></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </Table>
         </Container>
     );
 };
-
 export default Transfers;
