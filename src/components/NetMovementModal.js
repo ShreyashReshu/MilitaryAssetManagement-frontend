@@ -1,4 +1,4 @@
-import { Modal, Table, Button } from 'react-bootstrap';
+import { Modal, Button } from 'react-bootstrap';
 
 const NetMovementModal = ({ show, handleClose, data }) => {
     return (
