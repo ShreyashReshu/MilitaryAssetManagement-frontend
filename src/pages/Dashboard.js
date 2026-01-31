@@ -12,10 +12,9 @@ const Dashboard = () => {
     const [movements, setMovements] = useState({ purchases: 0, transfersIn: 0, transfersOut: 0 });
     const [showModal, setShowModal] = useState(false);
 
-    // --- FIX IS HERE ---
     useEffect(() => { 
         fetchData(); 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        
     }, []);
 
     const fetchData = async () => {

@@ -53,7 +53,7 @@ const Login = () => {
                             <Form.Label className="text-dark fw-bold small text-uppercase">Username</Form.Label>
                             <Form.Control 
                                 type="text" 
-                                placeholder="Enter Service ID"
+                                placeholder="Enter Your Username"
                                 onChange={(e) => setUsername(e.target.value)} 
                                 required 
                                 autoFocus
@@ -65,7 +65,7 @@ const Login = () => {
                             <Form.Label className="text-dark fw-bold small text-uppercase">Password</Form.Label>
                             <Form.Control 
                                 type="password" 
-                                placeholder="••••••••"
+                                placeholder="Enter Your Password"
                                 onChange={(e) => setPassword(e.target.value)} 
                                 required 
                                 style={{ borderRadius: "8px", padding: "10px" }}

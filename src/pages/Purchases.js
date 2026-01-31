@@ -28,7 +28,7 @@ const Purchases = () => {
             await API.post("/assets", formData);
             setMsg("Asset Purchased!");
             fetchAssets();
-            setFormData({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 });
+            setFormData({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 }); // Clear inputs
         } catch (err) { setMsg("Error purchasing asset."); }
     };
 
@@ -42,7 +42,13 @@ const Purchases = () => {
                     <Row className="g-2">
                         <Col md={3}><Form.Control placeholder="Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required /></Col>
                         <Col md={3}><Form.Control placeholder="Serial #" value={formData.serialNumber} onChange={e => setFormData({...formData, serialNumber: e.target.value})} required /></Col>
-                        <Col md={2}><Form.Select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}><option value="WEAPON">Weapon</option><option value="VEHICLE">Vehicle</option></Form.Select></Col>
+                        <Col md={2}>
+                            <Form.Select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                                <option value="WEAPON">Weapon</option>
+                                <option value="VEHICLE">Vehicle</option>
+                                <option value="AMMUNITION">Ammunition</option>
+                            </Form.Select>
+                        </Col>
                         <Col md={2}><Form.Control type="number" placeholder="Base ID" value={formData.baseId} onChange={e => setFormData({...formData, baseId: e.target.value})} required /></Col>
                         <Col md={2}><Button type="submit" variant="success" className="w-100">Purchase</Button></Col>
                     </Row>
@@ -51,7 +57,10 @@ const Purchases = () => {
 
             <div className="d-flex justify-content-end mb-2">
                 <Form.Select style={{width:'200px'}} onChange={(e) => setFilterType(e.target.value)}>
-                    <option value="All">All Types</option><option value="WEAPON">Weapons</option><option value="VEHICLE">Vehicles</option>
+                    <option value="All">All Types</option>
+                    <option value="WEAPON">Weapons</option>
+                    <option value="VEHICLE">Vehicles</option>
+                    <option value="AMMUNITION">Ammunition</option>
                 </Form.Select>
             </div>
 
