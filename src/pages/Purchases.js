@@ -6,7 +6,7 @@ const Purchases = () => {
     const [assets, setAssets] = useState([]);
     const [filteredAssets, setFilteredAssets] = useState([]);
     const [formData, setFormData] = useState({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 });
-    const [msg, setMsg] = useState("");
+    const [msg, setMsg] = useState({ text: "", type: "" });
     const [filterType, setFilterType] = useState("All");
 
     useEffect(() => { fetchAssets(); }, []);
@@ -26,22 +26,26 @@ const Purchases = () => {
         e.preventDefault();
         try {
             await API.post("/assets", formData);
-            setMsg("Asset Purchased!");
+            setMsg({ text: "Asset Purchased Successfully!", type: "success" });
             fetchAssets();
-            setFormData({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 }); // Clear inputs
-        } catch (err) { setMsg("Error purchasing asset."); }
+            setFormData({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 });
+        } catch (err) { 
+            // Better Error Message
+            setMsg({ text: "Error: Serial Number likely already exists.", type: "danger" }); 
+        }
     };
 
     return (
         <Container className="mt-4">
             <h2 className="mb-4">Purchases & Inventory</h2>
-            {msg && <Alert variant="info" dismissible onClose={() => setMsg("")}>{msg}</Alert>}
+            
+            {msg.text && <Alert variant={msg.type} dismissible onClose={() => setMsg({ text: "", type: "" })}>{msg.text}</Alert>}
             
             <Card className="mb-4 shadow-sm border-0 bg-light"><Card.Body>
                 <Form onSubmit={handlePurchase}>
                     <Row className="g-2">
                         <Col md={3}><Form.Control placeholder="Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required /></Col>
-                        <Col md={3}><Form.Control placeholder="Serial #" value={formData.serialNumber} onChange={e => setFormData({...formData, serialNumber: e.target.value})} required /></Col>
+                        <Col md={3}><Form.Control placeholder="Serial # (Must be Unique)" value={formData.serialNumber} onChange={e => setFormData({...formData, serialNumber: e.target.value})} required /></Col>
                         <Col md={2}>
                             <Form.Select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
                                 <option value="WEAPON">Weapon</option>
