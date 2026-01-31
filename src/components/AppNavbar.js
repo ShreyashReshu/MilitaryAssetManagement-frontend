@@ -6,7 +6,7 @@ import AuthContext from '../context/AuthContext';
 const AppNavbar = () => {
     const { user, logout } = useContext(AuthContext);
 
-    if (!user) return null; // Don't show navbar on login screen
+    if (!user) return null;
 
     return (
         <Navbar bg="dark" variant="dark" expand="lg">

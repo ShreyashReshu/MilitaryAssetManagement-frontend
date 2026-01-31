@@ -9,7 +9,6 @@ export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Check if user is already logged in
         const token = localStorage.getItem("token");
         const savedRole = localStorage.getItem("role");
         if (token && savedRole) {
