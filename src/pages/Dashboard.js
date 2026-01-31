@@ -8,13 +8,12 @@ const Dashboard = () => {
     const [allAssets, setAllAssets] = useState([]);
     const [history, setHistory] = useState([]);
     const [bases, setBases] = useState([]);
-    
+
     const [selectedBase, setSelectedBase] = useState("All");
     const [selectedType, setSelectedType] = useState("All");
 
     const [metrics, setMetrics] = useState({ total: 0, active: 0, assigned: 0, expended: 0 });
     
-
     const [drillDownData, setDrillDownData] = useState([]); 
     const [modalAssets, setModalAssets] = useState([]); 
 
@@ -32,6 +31,7 @@ const Dashboard = () => {
         try {
             const assetsRes = await API.get("/assets");
             const historyRes = await API.get("/assets/transfers/history");
+            
             setAllAssets(assetsRes.data);
             setHistory(historyRes.data);
             
@@ -77,8 +77,8 @@ const Dashboard = () => {
     const handleApplyFilters = () => calculateMetrics(allAssets, history, selectedBase, selectedType);
 
     const openDetailModal = (category) => {
-        let data = [];
         let source = drillDownData; 
+        let data = [];
         
         switch(category) {
             case 'Active': data = source.filter(a => a.status === 'ACTIVE'); break;
@@ -86,10 +86,13 @@ const Dashboard = () => {
             case 'Expended': data = source.filter(a => a.status === 'EXPENDED'); break;
             default: data = source;
         }
+        
         setModalTitle(category);
         setModalAssets(data);
         setShowDetailModal(true);
     };
+
+    const clickableStyle = { cursor: 'pointer', transition: 'transform 0.2s' };
 
     return (
         <Container className="mt-4 pb-5">
@@ -123,10 +126,10 @@ const Dashboard = () => {
             </Card>
 
             <Row className="g-4 mb-4">
-                <Col md={3}><Card className="text-white bg-primary h-100 shadow" style={{cursor:'pointer'}} onClick={() => openDetailModal('Total Assets')}><Card.Body className="text-center"><h6>Total Assets</h6><h1 className="display-4 fw-bold">{metrics.total}</h1></Card.Body></Card></Col>
-                <Col md={3}><Card className="text-white bg-success h-100 shadow" style={{cursor:'pointer'}} onClick={() => openDetailModal('Active')}><Card.Body className="text-center"><h6>Active</h6><h1 className="display-4 fw-bold">{metrics.active}</h1></Card.Body></Card></Col>
-                <Col md={3}><Card className="text-white bg-warning h-100 shadow" style={{cursor:'pointer'}} onClick={() => openDetailModal('Assigned')}><Card.Body className="text-center text-dark"><h6>Assigned</h6><h1 className="display-4 fw-bold">{metrics.assigned}</h1></Card.Body></Card></Col>
-                <Col md={3}><Card className="text-white bg-danger h-100 shadow" style={{cursor:'pointer'}} onClick={() => openDetailModal('Expended')}><Card.Body className="text-center"><h6>Expended</h6><h1 className="display-4 fw-bold">{metrics.expended}</h1></Card.Body></Card></Col>
+                <Col md={3}><Card className="text-white bg-primary h-100 shadow" style={clickableStyle} onClick={() => openDetailModal('Total Assets')}><Card.Body className="text-center"><h6>Total Assets</h6><h1 className="display-4 fw-bold">{metrics.total}</h1><small>Click to view list</small></Card.Body></Card></Col>
+                <Col md={3}><Card className="text-white bg-success h-100 shadow" style={clickableStyle} onClick={() => openDetailModal('Active')}><Card.Body className="text-center"><h6>Active</h6><h1 className="display-4 fw-bold">{metrics.active}</h1><small>Click to view list</small></Card.Body></Card></Col>
+                <Col md={3}><Card className="text-white bg-warning h-100 shadow" style={clickableStyle} onClick={() => openDetailModal('Assigned')}><Card.Body className="text-center text-dark"><h6>Assigned</h6><h1 className="display-4 fw-bold">{metrics.assigned}</h1><small>Click to view list</small></Card.Body></Card></Col>
+                <Col md={3}><Card className="text-white bg-danger h-100 shadow" style={clickableStyle} onClick={() => openDetailModal('Expended')}><Card.Body className="text-center"><h6>Expended</h6><h1 className="display-4 fw-bold">{metrics.expended}</h1><small>Click to view list</small></Card.Body></Card></Col>
             </Row>
 
             <Card className="text-center border-0 shadow-sm"><Card.Body>
@@ -137,8 +140,12 @@ const Dashboard = () => {
 
             <NetMovementModal show={showNetModal} handleClose={() => setShowNetModal(false)} data={movementData} />
             
-            {/* THIS FIXES THE EMPTY POPUP */}
-            <AssetDetailModal show={showDetailModal} handleClose={() => setShowDetailModal(false)} title={modalTitle} assets={modalAssets} />
+            <AssetDetailModal 
+                show={showDetailModal} 
+                handleClose={() => setShowDetailModal(false)} 
+                title={modalTitle} 
+                assets={modalAssets} 
+            />
         </Container>
     );
 };
