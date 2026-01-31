@@ -24,14 +24,24 @@ const Purchases = () => {
 
     const handlePurchase = async (e) => {
         e.preventDefault();
+        if (!formData.name || !formData.serialNumber) {
+            setMsg({ text: "Name and Serial Number are required.", type: "danger" });
+            return;
+        }
         try {
-            await API.post("/assets", formData);
+            const payload = {
+                name: formData.name,
+                serialNumber: formData.serialNumber.trim(),
+                type: formData.type,
+                currentBase: { id: parseInt(formData.baseId) }
+            };
+            await API.post("/assets", payload);
             setMsg({ text: "Asset Purchased Successfully!", type: "success" });
             fetchAssets();
             setFormData({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 });
         } catch (err) { 
-            // Better Error Message
-            setMsg({ text: "Error: Serial Number likely already exists.", type: "danger" }); 
+            const errorMsg = err.response?.data?.message || "Error: Serial Number likely already exists.";
+            setMsg({ text: errorMsg, type: "danger" }); 
         }
     };
 
