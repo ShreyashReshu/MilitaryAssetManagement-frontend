@@ -8,8 +8,15 @@ const Dashboard = () => {
     const [history, setHistory] = useState([]);
     const [selectedBase, setSelectedBase] = useState("All");
     const [selectedType, setSelectedType] = useState("All");
+
     const [metrics, setMetrics] = useState({ total: 0, active: 0, assigned: 0, expended: 0 });
-    const [movements, setMovements] = useState({ purchases: 0, transfersIn: 0, transfersOut: 0 });
+    
+    const [modalData, setModalData] = useState({ 
+        purchases: [], 
+        transfersIn: [], 
+        transfersOut: [] 
+    });
+    
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => { 
@@ -37,13 +44,16 @@ const Dashboard = () => {
             filteredAssets = filteredAssets.filter(a => a.type === typeFilter);
         }
 
-        let tIn = 0, tOut = 0;
+        let tInList = [];
+        let tOutList = [];
+        
         if (baseFilter !== "All") {
             const baseName = baseFilter === "1" ? "Fort Alpha" : "Camp Bravo";
-            tIn = logs.filter(l => l.destBase === baseName).length;
-            tOut = logs.filter(l => l.sourceBase === baseName).length;
+            tInList = logs.filter(l => l.destBase === baseName);
+            tOutList = logs.filter(l => l.sourceBase === baseName);
         } else {
-            tIn = logs.length; tOut = logs.length;
+            tInList = logs; 
+            tOutList = logs;
         }
 
         setMetrics({
@@ -52,7 +62,12 @@ const Dashboard = () => {
             assigned: filteredAssets.filter(a => a.status === 'ASSIGNED').length,
             expended: filteredAssets.filter(a => a.status === 'EXPENDED').length,
         });
-        setMovements({ purchases: filteredAssets.length, transfersIn: tIn, transfersOut: tOut });
+
+        setModalData({ 
+            purchases: filteredAssets,
+            transfersIn: tInList, 
+            transfersOut: tOutList 
+        });
     };
 
     const handleApplyFilters = () => calculateMetrics(allAssets, history, selectedBase, selectedType);
@@ -99,7 +114,7 @@ const Dashboard = () => {
                 <Button variant="outline-dark" onClick={() => setShowModal(true)}>View Breakdown</Button>
             </Card.Body></Card>
 
-            <NetMovementModal show={showModal} handleClose={() => setShowModal(false)} data={{ purchases: movements.purchases, transfers: movements.transfersIn }} />
+            <NetMovementModal show={showModal} handleClose={() => setShowModal(false)} data={modalData} />
         </Container>
     );
 };
