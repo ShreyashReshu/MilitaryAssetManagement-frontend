@@ -2,22 +2,24 @@ import { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Button, Form, Badge } from "react-bootstrap";
 import API from "../api";
 import NetMovementModal from "../components/NetMovementModal";
+import AssetDetailModal from "../components/AssetDetailModal";
 
 const Dashboard = () => {
     const [allAssets, setAllAssets] = useState([]);
     const [history, setHistory] = useState([]);
+    const [bases, setBases] = useState([]);
+
     const [selectedBase, setSelectedBase] = useState("All");
     const [selectedType, setSelectedType] = useState("All");
 
     const [metrics, setMetrics] = useState({ total: 0, active: 0, assigned: 0, expended: 0 });
+    const [drillDownData, setDrillDownData] = useState([]); 
+    const [modalTitle, setModalTitle] = useState("");
     
-    const [modalData, setModalData] = useState({ 
-        purchases: [], 
-        transfersIn: [], 
-        transfersOut: [] 
-    });
+    const [showNetModal, setShowNetModal] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
     
-    const [showModal, setShowModal] = useState(false);
+    const [movementData, setMovementData] = useState({ purchases: [], transfersIn: [], transfersOut: [] });
 
     useEffect(() => { 
         fetchData(); 
@@ -28,49 +30,86 @@ const Dashboard = () => {
         try {
             const assetsRes = await API.get("/assets");
             const historyRes = await API.get("/assets/transfers/history");
+            
             setAllAssets(assetsRes.data);
             setHistory(historyRes.data);
+            
+            const uniqueBases = [];
+            const map = new Map();
+            for (const item of assetsRes.data) {
+                if (item.currentBase && !map.has(item.currentBase.id)) {
+                    map.set(item.currentBase.id, true);
+                    uniqueBases.push({ id: item.currentBase.id, name: item.currentBase.name });
+                }
+            }
+            setBases(uniqueBases);
+
             calculateMetrics(assetsRes.data, historyRes.data, "All", "All");
         } catch (err) { console.error(err); }
     };
 
     const calculateMetrics = (assets, logs, baseFilter, typeFilter) => {
-        let filteredAssets = assets;
+        let filtered = assets;
         
+        // Apply Filters
         if (baseFilter !== "All") {
-            filteredAssets = filteredAssets.filter(a => a.currentBase?.id.toString() === baseFilter);
+            filtered = filtered.filter(a => a.currentBase?.id.toString() === baseFilter);
         }
         if (typeFilter !== "All") {
-            filteredAssets = filteredAssets.filter(a => a.type === typeFilter);
+            filtered = filtered.filter(a => a.type === typeFilter);
         }
 
-        let tInList = [];
-        let tOutList = [];
         
+        let tIn = [], tOut = [];
         if (baseFilter !== "All") {
-            const baseName = baseFilter === "1" ? "Fort Alpha" : "Camp Bravo";
-            tInList = logs.filter(l => l.destBase === baseName);
-            tOutList = logs.filter(l => l.sourceBase === baseName);
+            const baseObj = bases.find(b => b.id.toString() === baseFilter);
+            const baseName = baseObj ? baseObj.name : "";
+            
+            tIn = logs.filter(l => l.destBase === baseName);
+            tOut = logs.filter(l => l.sourceBase === baseName);
         } else {
-            tInList = logs; 
-            tOutList = logs;
+            tIn = logs; tOut = logs;
         }
 
         setMetrics({
-            total: filteredAssets.length,
-            active: filteredAssets.filter(a => a.status === 'ACTIVE').length,
-            assigned: filteredAssets.filter(a => a.status === 'ASSIGNED').length,
-            expended: filteredAssets.filter(a => a.status === 'EXPENDED').length,
+            total: filtered.length,
+            active: filtered.filter(a => a.status === 'ACTIVE').length,
+            assigned: filtered.filter(a => a.status === 'ASSIGNED').length,
+            expended: filtered.filter(a => a.status === 'EXPENDED').length,
         });
 
-        setModalData({ 
-            purchases: filteredAssets,
-            transfersIn: tInList, 
-            transfersOut: tOutList 
+        setDrillDownData(filtered); 
+
+        setMovementData({ 
+            purchases: filtered,
+            transfersIn: tIn, 
+            transfersOut: tOut 
         });
     };
 
     const handleApplyFilters = () => calculateMetrics(allAssets, history, selectedBase, selectedType);
+
+    
+    const openDetailModal = (category) => {
+        let data = [];
+        let filtered = drillDownData;
+        switch(category) {
+            case 'Active':
+                data = filtered.filter(a => a.status === 'ACTIVE');
+                break;
+            case 'Assigned':
+                data = filtered.filter(a => a.status === 'ASSIGNED');
+                break;
+            case 'Expended':
+                data = filtered.filter(a => a.status === 'EXPENDED');
+                break;
+            default: 
+                data = filtered;
+        }
+        setModalTitle(category);
+        setDrillDownData(data); 
+        setShowDetailModal(true);
+    };
 
     return (
         <Container className="mt-4 pb-5">
@@ -79,20 +118,26 @@ const Dashboard = () => {
                 <Badge bg="success">System Online</Badge>
             </div>
             
+            {/* FILTERS */}
             <Card className="mb-4 p-4 shadow-sm border-0 bg-light">
                 <Row className="g-3">
-                    <Col md={3}><Form.Label>Base Filter</Form.Label>
+                    <Col md={3}>
+                        <Form.Label>Base Filter</Form.Label>
                         <Form.Select onChange={(e) => setSelectedBase(e.target.value)}>
                             <option value="All">All Bases</option>
-                            <option value="1">Fort Alpha</option>
-                            <option value="2">Camp Bravo</option>
+                            {/* DYNAMIC BASES RENDERED HERE */}
+                            {bases.map(base => (
+                                <option key={base.id} value={base.id}>{base.name}</option>
+                            ))}
                         </Form.Select>
                     </Col>
-                    <Col md={3}><Form.Label>Type Filter</Form.Label>
+                    <Col md={3}>
+                        <Form.Label>Type Filter</Form.Label>
                         <Form.Select onChange={(e) => setSelectedType(e.target.value)}>
                             <option value="All">All Types</option>
                             <option value="WEAPON">Weapons</option>
                             <option value="VEHICLE">Vehicles</option>
+                            <option value="AMMUNITION">Ammunition</option>
                         </Form.Select>
                     </Col>
                     <Col md={3} className="d-flex align-items-end">
@@ -101,20 +146,79 @@ const Dashboard = () => {
                 </Row>
             </Card>
 
+            {/* CLICKABLE METRIC CARDS */}
             <Row className="g-4 mb-4">
-                <Col md={3}><Card className="text-white bg-primary h-100 shadow"><Card.Body className="text-center"><h6>Total Assets</h6><h1 className="display-4 fw-bold">{metrics.total}</h1></Card.Body></Card></Col>
-                <Col md={3}><Card className="text-white bg-success h-100 shadow"><Card.Body className="text-center"><h6>Active</h6><h1 className="display-4 fw-bold">{metrics.active}</h1></Card.Body></Card></Col>
-                <Col md={3}><Card className="text-white bg-warning h-100 shadow"><Card.Body className="text-center text-dark"><h6>Assigned</h6><h1 className="display-4 fw-bold">{metrics.assigned}</h1></Card.Body></Card></Col>
-                <Col md={3}><Card className="text-white bg-danger h-100 shadow"><Card.Body className="text-center"><h6>Expended</h6><h1 className="display-4 fw-bold">{metrics.expended}</h1></Card.Body></Card></Col>
+                <Col md={3}>
+                    <Card 
+                        className="text-white bg-primary h-100 shadow card-hover" 
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => openDetailModal('Total Assets')}
+                    >
+                        <Card.Body className="text-center">
+                            <h6>Total Assets</h6>
+                            <h1 className="display-4 fw-bold">{metrics.total}</h1>
+                            <small>Click to view list</small>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={3}>
+                    <Card 
+                        className="text-white bg-success h-100 shadow card-hover"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => openDetailModal('Active')}
+                    >
+                        <Card.Body className="text-center">
+                            <h6>Active</h6>
+                            <h1 className="display-4 fw-bold">{metrics.active}</h1>
+                            <small>Click to view list</small>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={3}>
+                    <Card 
+                        className="text-white bg-warning h-100 shadow card-hover"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => openDetailModal('Assigned')}
+                    >
+                        <Card.Body className="text-center text-dark">
+                            <h6>Assigned</h6>
+                            <h1 className="display-4 fw-bold">{metrics.assigned}</h1>
+                            <small>Click to view list</small>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={3}>
+                    <Card 
+                        className="text-white bg-danger h-100 shadow card-hover"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => openDetailModal('Expended')}
+                    >
+                        <Card.Body className="text-center">
+                            <h6>Expended</h6>
+                            <h1 className="display-4 fw-bold">{metrics.expended}</h1>
+                            <small>Click to view list</small>
+                        </Card.Body>
+                    </Card>
+                </Col>
             </Row>
 
-            <Card className="text-center border-0 shadow-sm"><Card.Body>
-                <h5 className="text-primary">Net Movement Tracker</h5>
-                <p className="text-muted">Calculated as: Purchases + Transfers In - Transfers Out</p>
-                <Button variant="outline-dark" onClick={() => setShowModal(true)}>View Breakdown</Button>
-            </Card.Body></Card>
+            <Card className="text-center border-0 shadow-sm">
+                <Card.Body>
+                    <h5 className="text-primary">Net Movement Tracker</h5>
+                    <p className="text-muted">Calculated as: Purchases + Transfers In - Transfers Out</p>
+                    <Button variant="outline-dark" onClick={() => setShowNetModal(true)}>View Breakdown</Button>
+                </Card.Body>
+            </Card>
 
-            <NetMovementModal show={showModal} handleClose={() => setShowModal(false)} data={modalData} />
+            {/* Modals */}
+            <NetMovementModal show={showNetModal} handleClose={() => setShowNetModal(false)} data={movementData} />
+            
+            <AssetDetailModal 
+                show={showDetailModal} 
+                handleClose={() => setShowDetailModal(false)} 
+                title={modalTitle} 
+                assets={drillDownData} 
+            />
         </Container>
     );
 };
