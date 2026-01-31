@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Container, Form, Button, Card, Row, Col, Alert, Table, Badge } from "react-bootstrap";
 import API from "../api";
+import AuthContext from "../context/AuthContext";
 
 const Assignments = () => {
+    const { role } = useContext(AuthContext);
     const [assignData, setAssignData] = useState({ id: "", soldier: "" });
     const [expendId, setExpendId] = useState("");
     const [msg, setMsg] = useState({ text: "", type: "" });
     const [logs, setLogs] = useState([]);
+    const canAssignExpend = role === "ADMIN" || role === "COMMANDER";
 
     useEffect(() => {
         fetchLogs();
@@ -24,8 +27,8 @@ const Assignments = () => {
         try {
             await API.put(`/assets/${assignData.id}/assign`, { soldierName: assignData.soldier });
             setMsg({ text: `Success: Asset #${assignData.id} assigned to ${assignData.soldier}`, type: "success" });
-            setAssignData({ id: "", soldier: "" }); // Clear Input
-            fetchLogs(); // Refresh Log
+            setAssignData({ id: "", soldier: "" });
+            fetchLogs();
         } catch (e) { 
             setMsg({ text: "Error: Check Asset ID.", type: "danger" }); 
         }
@@ -36,12 +39,16 @@ const Assignments = () => {
         try {
             await API.put(`/assets/${expendId}/expend`);
             setMsg({ text: `Success: Asset #${expendId} marked EXPENDED`, type: "warning" });
-            setExpendId(""); // Clear Input
-            fetchLogs(); // Refresh Log
+            setExpendId("");
+            fetchLogs();
         } catch (e) { 
             setMsg({ text: "Error: Check Asset ID.", type: "danger" }); 
         }
     };
+
+    if (!canAssignExpend) {
+        return <Container className="mt-4"><Alert variant="danger">Access Denied: Only Admin and Commanders can manage assignments and expenditures.</Alert></Container>;
+    }
 
     return (
         <Container className="mt-4 pb-5">

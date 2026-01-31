@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Container, Form, Button, Card, Table, Badge, Alert, Row, Col } from "react-bootstrap";
 import API from "../api";
+import AuthContext from "../context/AuthContext";
 
 const Transfers = () => {
+    const { role } = useContext(AuthContext);
     const [transfer, setTransfer] = useState({ assetId: "", sourceBaseId: "", destBaseId: "" });
     const [message, setMessage] = useState(null);
     const [history, setHistory] = useState([]);
+    const canTransfer = role === "ADMIN" || role === "LOGISTICS" || role === "COMMANDER";
 
     useEffect(() => { fetchHistory(); }, []);
 
@@ -27,6 +30,10 @@ const Transfers = () => {
             setMessage({ type: "danger", text: "Transfer Failed. Check Asset ID and Source Base." });
         }
     };
+
+    if (!canTransfer) {
+        return <Container className="mt-4"><Alert variant="danger">Access Denied: Only Admin, Logistics, and Commanders can perform transfers.</Alert></Container>;
+    }
 
     return (
         <Container className="mt-4">

@@ -54,13 +54,15 @@ const Dashboard = () => {
         if (typeFilter !== "All") filtered = filtered.filter(a => a.type === typeFilter);
 
         let tIn = [], tOut = [];
-        if (baseFilter !== "All") {
-            const baseObj = bases.find(b => b.id.toString() === baseFilter);
-            const baseName = baseObj ? baseObj.name : "";
+        const baseObj = baseFilter !== "All" ? bases.find(b => b.id.toString() === baseFilter) : null;
+        const baseName = baseObj ? baseObj.name : "";
+
+        if (baseFilter !== "All" && baseName) {
             tIn = logs.filter(l => l.destBase === baseName);
             tOut = logs.filter(l => l.sourceBase === baseName);
         } else {
-            tIn = logs; tOut = logs;
+            tIn = [];
+            tOut = [];
         }
 
         setMetrics({

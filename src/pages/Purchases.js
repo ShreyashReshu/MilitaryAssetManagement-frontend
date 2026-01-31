@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Container, Form, Button, Table, Alert, Badge, Row, Col, Card } from "react-bootstrap";
 import API from "../api";
+import AuthContext from "../context/AuthContext";
 
 const Purchases = () => {
+    const { role } = useContext(AuthContext);
     const [assets, setAssets] = useState([]);
     const [filteredAssets, setFilteredAssets] = useState([]);
     const [formData, setFormData] = useState({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 });
     const [msg, setMsg] = useState({ text: "", type: "" });
     const [filterType, setFilterType] = useState("All");
+    const canPurchase = role === "ADMIN" || role === "LOGISTICS";
 
     useEffect(() => { fetchAssets(); }, []);
     useEffect(() => {
@@ -44,6 +47,10 @@ const Purchases = () => {
             setMsg({ text: errorMsg, type: "danger" }); 
         }
     };
+
+    if (!canPurchase) {
+        return <Container className="mt-4"><Alert variant="danger">Access Denied: Only Admin and Logistics officers can manage purchases.</Alert></Container>;
+    }
 
     return (
         <Container className="mt-4">
