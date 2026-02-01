@@ -67,7 +67,7 @@ const Assignments = () => {
                                 </Form.Group>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Soldier Name</Form.Label>
-                                    <Form.Control type="text" placeholder="e.g. Sgt. Miller" value={assignData.soldier} onChange={e => setAssignData({...assignData, soldier: e.target.value})} required />
+                                    <Form.Control type="text" placeholder="e.g. Sgt. Rawat" value={assignData.soldier} onChange={e => setAssignData({...assignData, soldier: e.target.value})} required />
                                 </Form.Group>
                                 <Button type="submit" variant="primary" className="w-100 fw-bold">Confirm Assignment</Button>
                             </Form>

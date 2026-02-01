@@ -7,12 +7,16 @@ const Purchases = () => {
     const { role } = useContext(AuthContext);
     const [assets, setAssets] = useState([]);
     const [filteredAssets, setFilteredAssets] = useState([]);
+    const [bases, setBases] = useState([]);
     const [formData, setFormData] = useState({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 });
     const [msg, setMsg] = useState({ text: "", type: "" });
     const [filterType, setFilterType] = useState("All");
     const canPurchase = role === "ADMIN" || role === "LOGISTICS";
 
-    useEffect(() => { fetchAssets(); }, []);
+    useEffect(() => { 
+        fetchAssets();
+        fetchBases();
+    }, []);
     useEffect(() => {
         setFilteredAssets(filterType === "All" ? assets : assets.filter(a => a.type === filterType));
     }, [filterType, assets]);
@@ -23,6 +27,13 @@ const Purchases = () => {
             setAssets(res.data);
             setFilteredAssets(res.data);
         } catch (err) { console.error(err); }
+    };
+
+    const fetchBases = async () => {
+        try {
+            const res = await API.get("/assets/bases");
+            setBases(res.data);
+        } catch (err) { console.error("Failed to load bases"); }
     };
 
     const handlePurchase = async (e) => {
@@ -41,7 +52,7 @@ const Purchases = () => {
             await API.post("/assets", payload);
             setMsg({ text: "Asset Purchased Successfully!", type: "success" });
             fetchAssets();
-            setFormData({ name: "", serialNumber: "", type: "WEAPON", baseId: 1 });
+            setFormData({ name: "", serialNumber: "", type: "WEAPON", baseId: bases.length > 0 ? bases[0].id : 1 });
         } catch (err) { 
             const errorMsg = err.response?.data?.message || "Error: Serial Number likely already exists.";
             setMsg({ text: errorMsg, type: "danger" }); 
@@ -70,7 +81,14 @@ const Purchases = () => {
                                 <option value="AMMUNITION">Ammunition</option>
                             </Form.Select>
                         </Col>
-                        <Col md={2}><Form.Control type="number" placeholder="Base ID" value={formData.baseId} onChange={e => setFormData({...formData, baseId: e.target.value})} required /></Col>
+                        <Col md={2}>
+                            <Form.Select value={formData.baseId} onChange={e => setFormData({...formData, baseId: e.target.value})} required>
+                                <option value="">Select Base</option>
+                                {bases.map(base => (
+                                    <option key={base.id} value={base.id}>{base.name}</option>
+                                ))}
+                            </Form.Select>
+                        </Col>
                         <Col md={2}><Button type="submit" variant="success" className="w-100">Purchase</Button></Col>
                     </Row>
                 </Form>

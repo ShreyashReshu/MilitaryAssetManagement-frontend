@@ -6,11 +6,22 @@ import AuthContext from "../context/AuthContext";
 const Transfers = () => {
     const { role } = useContext(AuthContext);
     const [transfer, setTransfer] = useState({ assetId: "", sourceBaseId: "", destBaseId: "" });
+    const [bases, setBases] = useState([]);
     const [message, setMessage] = useState(null);
     const [history, setHistory] = useState([]);
     const canTransfer = role === "ADMIN" || role === "LOGISTICS" || role === "COMMANDER";
 
-    useEffect(() => { fetchHistory(); }, []);
+    useEffect(() => { 
+        fetchBases();
+        fetchHistory(); 
+    }, []);
+
+    const fetchBases = async () => {
+        try {
+            const res = await API.get("/assets/bases");
+            setBases(res.data);
+        } catch (err) { console.error("Failed to load bases"); }
+    };
 
     const fetchHistory = async () => {
         try {
@@ -27,7 +38,7 @@ const Transfers = () => {
             fetchHistory(); 
             setTransfer({ assetId: "", sourceBaseId: "", destBaseId: "" });
         } catch (err) {
-            setMessage({ type: "danger", text: "Transfer Failed. Check Asset ID and Source Base." });
+            setMessage({ type: "danger", text: "Transfer Failed. Check Asset ID and Base Selection." });
         }
     };
 
@@ -44,9 +55,39 @@ const Transfers = () => {
                 <Card.Title className="mb-3">Initiate Transfer</Card.Title>
                 <Form onSubmit={handleTransfer}>
                     <Row className="g-3">
-                        <Col md={3}><Form.Control type="number" placeholder="Asset ID" value={transfer.assetId} onChange={e => setTransfer({...transfer, assetId: e.target.value})} required /></Col>
-                        <Col md={3}><Form.Control type="number" placeholder="Source Base ID" value={transfer.sourceBaseId} onChange={e => setTransfer({...transfer, sourceBaseId: e.target.value})} required /></Col>
-                        <Col md={3}><Form.Control type="number" placeholder="Dest Base ID" value={transfer.destBaseId} onChange={e => setTransfer({...transfer, destBaseId: e.target.value})} required /></Col>
+                        <Col md={3}>
+                            <Form.Control 
+                                type="number" 
+                                placeholder="Asset ID" 
+                                value={transfer.assetId} 
+                                onChange={e => setTransfer({...transfer, assetId: e.target.value})} 
+                                required 
+                            />
+                        </Col>
+                        <Col md={3}>
+                            <Form.Select 
+                                value={transfer.sourceBaseId} 
+                                onChange={e => setTransfer({...transfer, sourceBaseId: e.target.value})} 
+                                required
+                            >
+                                <option value="">Select Source Base</option>
+                                {bases.map(base => (
+                                    <option key={base.id} value={base.id}>{base.name}</option>
+                                ))}
+                            </Form.Select>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Select 
+                                value={transfer.destBaseId} 
+                                onChange={e => setTransfer({...transfer, destBaseId: e.target.value})} 
+                                required
+                            >
+                                <option value="">Select Destination Base</option>
+                                {bases.map(base => (
+                                    <option key={base.id} value={base.id}>{base.name}</option>
+                                ))}
+                            </Form.Select>
+                        </Col>
                         <Col md={3}><Button variant="warning" type="submit" className="w-100 fw-bold">Execute Move</Button></Col>
                     </Row>
                 </Form>
